@@ -48,6 +48,8 @@ class LSSTAlertSupplier(BaseAlertSupplier):
 
     alert_identifier: Literal["diaSourceId", "alertId"] = "diaSourceId"
 
+    forced_source_overwrite: bool = True
+
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self._emitted_any = False
@@ -58,7 +60,7 @@ class LSSTAlertSupplier(BaseAlertSupplier):
 
     @classmethod
     def _get_sources(
-        cls, alert: dict, max_history: float
+        cls, alert: dict, max_history: float, forced_source_overwrite: bool = True
     ) -> Generator[dict, None, None]:
         """
         yield one photometric point per visit, preferring forced photometry to
@@ -77,7 +79,7 @@ class LSSTAlertSupplier(BaseAlertSupplier):
                 alert.get("diaNondetectionLimit") or (),
             ),
         ):
-            if (visit := dp["visit"]) not in visits and dp["midpointMjdTai"] >= t0:
+            if ((visit := dp["visit"]) not in visits or not forced_source_overwrite) and dp["midpointMjdTai"] >= t0:
                 yield dp
                 visits.add(visit)
 
@@ -87,10 +89,11 @@ class LSSTAlertSupplier(BaseAlertSupplier):
         d: dict,
         max_history: float = float("inf"),
         alert_identifier: Literal["diaSourceId", "alertId"] = "diaSourceId",
+        forced_source_overwrite: bool = True,
     ) -> AmpelAlertProtocol:
         if diaObject := d.get("diaObject"):
             dps = (
-                *cls._get_sources(d, max_history=max_history),
+                *cls._get_sources(d, max_history=max_history, forced_source_overwrite=forced_source_overwrite),
                 cls._shape_dp(diaObject),
             )
             # Add base alert information to extras field
@@ -128,7 +131,7 @@ class LSSTAlertSupplier(BaseAlertSupplier):
             d = self._deserialize(next(self.alert_loader))
 
             try:
-                alert = self._shape(d, self.max_history, self.alert_identifier)
+                alert = self._shape(d, self.max_history, self.alert_identifier, self.forced_source_overwrite)
                 self._emitted_any = True
                 return alert
             except DIAObjectMissingError:
