@@ -1,13 +1,15 @@
 import datetime
 from pathlib import Path
 
-import confluent_kafka
 import fastavro
 import pytest
 from pytest_mock import MockerFixture
 
 from ampel.lsst.alert.LSSTAlertSupplier import LSSTAlertSupplier
 from ampel.model.UnitModel import UnitModel
+
+# confluent_kafka.TIMESTAMP_CREATE_TIME
+TIMESTAMP_CREATE_TIME = 1
 
 
 class MockMessage:
@@ -19,7 +21,7 @@ class MockMessage:
         self._value = record
         self._offset = offset
         self._timestamp = (
-            confluent_kafka.TIMESTAMP_CREATE_TIME,
+            TIMESTAMP_CREATE_TIME,
             int(datetime.datetime.now(tz=datetime.UTC).timestamp() * 1000),
         )
 

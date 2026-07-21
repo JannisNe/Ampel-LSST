@@ -6,18 +6,13 @@ unit:
 # Aux units
     - ampel.lsst.alert.LSSTAlertSupplier
     - ampel.lsst.alert.ElasticcAlertSupplier
-    - ampel.lsst.alert.load.MultiAvroAlertLoader
     - ampel.lsst.alert.load.ElasticcTrainingsetLoader
-    - ampel.lsst.alert.load.KafkaAlertLoader
-    - ampel.lsst.alert.load.ElasticcDirAlertLoader
     - ampel.lsst.alert.load.LSSTArchiveAlertLoader
     - ampel.lsst.ingest.LSSTCompilerOptions
     - ampel.lsst.view.LSSTT2Tabulator
     - ampel.lsst.aux.LSSTDPFilter
     - ampel.lsst.aux.LSSTFPFilter
     - ampel.lsst.aux.LSSTObjFilter
-    - ampel.lsst.kafka.KafkaConsumer
-    - ampel.lsst.kafka.KafkaProducer
     - ampel.lsst.t0.ReallySimpleLSSTFilter
     - ampel.lsst.t0.SimpleLSSTFilter
     - ampel.lsst.t1.LSSTT1Combiner
