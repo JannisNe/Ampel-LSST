@@ -9,8 +9,6 @@
 from collections.abc import Iterable
 from typing import Any
 
-from ampel.model.operator.AnyOf import AnyOf
-from ampel.model.operator.AllOf import AllOf
 from bson import encode
 
 from ampel.abstract.AbsT0Unit import AbsT0Unit
