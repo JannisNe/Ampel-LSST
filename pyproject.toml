@@ -1,6 +1,6 @@
 [project]
 name = "ampel-lsst"
-version = "0.10.1a21"
+version = "0.10.1a22"
 description = "Legacy Survey of Space and Time support for the Ampel system"
 requires-python = ">=3.11, <4"
 authors = [
@@ -32,6 +32,9 @@ dependencies = [
     "ampel-photometry (>=0.10.1,<0.11.0)",
 ]
 
+[project.optional-dependencies]
+arrow = ["pyarrow (>=25.0.0,<26.0.0)"]
+cache = ["valkey-glide-sync (>=2.5.0,<3.0.0)"]
 [dependency-groups]
 dev = [
     "pytest-ampel-core (>=0.10.0a4,<0.11)",
