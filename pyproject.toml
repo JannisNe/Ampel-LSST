@@ -1,6 +1,6 @@
 [project]
 name = "ampel-lsst"
-version = "0.10.1a20"
+version = "0.10.1a21"
 description = "Legacy Survey of Space and Time support for the Ampel system"
 requires-python = ">=3.11, <4"
 authors = [
