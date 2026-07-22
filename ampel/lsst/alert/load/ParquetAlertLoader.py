@@ -8,11 +8,16 @@
 
 import re
 from collections.abc import Iterator
+from contextlib import suppress
 from typing import Any
 
-import pyarrow.dataset as ds  # type: ignore[import-untyped]
-
 from ampel.abstract.AbsAlertLoader import AbsAlertLoader
+
+HAVE_PYARROW = False
+with suppress(ImportError):
+    import pyarrow.dataset as ds  # type: ignore[import-untyped]
+
+    HAVE_PYARROW = True
 
 
 def _parse_condition(condition: str | None) -> Any | None:
@@ -79,60 +84,62 @@ def _parse_condition(condition: str | None) -> Any | None:
     return filt
 
 
-class ParquetAlertLoader(AbsAlertLoader[dict]):
-    """
-    Alert loader for parquet files. This is used for testing and development purposes.
-    """
+if HAVE_PYARROW:
 
-    path: str
-    condition: str | None = None
-
-    def __init__(self, **kwargs) -> None:
+    class ParquetAlertLoader(AbsAlertLoader[dict]):
         """
-        Initialize the ParquetAlertLoader.
-
-        Note: We now use pyarrow.dataset.scanner(filter=...) instead of ParquetFile,
-        to enable Arrow-level filtering.
+        Alert loader for parquet files. This is used for testing and development purposes.
         """
-        super().__init__(**kwargs)
 
-        dataset = ds.dataset(self.path, format="parquet")
-        filt = _parse_condition(self.condition)
+        path: str
+        condition: str | None = None
 
-        scanner = dataset.scanner(
-            filter=filt,
-            batch_size=1,
-        )
+        def __init__(self, **kwargs) -> None:
+            """
+            Initialize the ParquetAlertLoader.
 
-        self._batches = iter(scanner.to_batches())
-        self._batch: Iterator[dict] | None = None
+            Note: We now use pyarrow.dataset.scanner(filter=...) instead of ParquetFile,
+            to enable Arrow-level filtering.
+            """
+            super().__init__(**kwargs)
 
-    def _next_batch(self) -> Iterator[dict]:
-        """
-        Return an iterator over the next batch of rows from the parquet file.
+            dataset = ds.dataset(self.path, format="parquet")
+            filt = _parse_condition(self.condition)
 
-        Because we use batch_size=1, Arrow may yield empty batches after filtering, which
-        falsely signals end-of-data. We must skip empty batches explicitly to avoid premature
-        StopIteration.
-        """
-        while True:
-            batch = next(self._batches)
-            rows = batch.to_pylist()
-            if rows:
-                return iter(rows)
+            scanner = dataset.scanner(
+                filter=filt,
+                batch_size=1,
+            )
 
-    def __next__(self) -> dict:
-        """
-        Return the next alert as a dictionary.
+            self._batches = iter(scanner.to_batches())
+            self._batch: Iterator[dict] | None = None
 
-        This method is used to implement the iterator protocol. It is called automatically
-        when the iterator is advanced to the next item. If the end of the data is reached, it
-        raises a StopIteration exception.
-        """
-        if self._batch is None:
-            self._batch = self._next_batch()
-        try:
-            return next(self._batch)
-        except StopIteration:
-            self._batch = self._next_batch()
-            return next(self._batch)
+        def _next_batch(self) -> Iterator[dict]:
+            """
+            Return an iterator over the next batch of rows from the parquet file.
+
+            Because we use batch_size=1, Arrow may yield empty batches after filtering, which
+            falsely signals end-of-data. We must skip empty batches explicitly to avoid premature
+            StopIteration.
+            """
+            while True:
+                batch = next(self._batches)
+                rows = batch.to_pylist()
+                if rows:
+                    return iter(rows)
+
+        def __next__(self) -> dict:
+            """
+            Return the next alert as a dictionary.
+
+            This method is used to implement the iterator protocol. It is called automatically
+            when the iterator is advanced to the next item. If the end of the data is reached, it
+            raises a StopIteration exception.
+            """
+            if self._batch is None:
+                self._batch = self._next_batch()
+            try:
+                return next(self._batch)
+            except StopIteration:
+                self._batch = self._next_batch()
+                return next(self._batch)
