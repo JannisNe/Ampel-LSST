@@ -4,7 +4,7 @@ version = "0.10.1a23"
 description = "Legacy Survey of Space and Time support for the Ampel system"
 requires-python = ">=3.11, <4"
 authors = [
-    { name = "Marcus Fenner", email = "mf@physik-hu-berlin.de" },
+    { name = "Marcus Fenner", email = "mf@physik.hu-berlin.de" },
     { name = "Valery Brinnel" },
     { name = "Jakob van Santen", email = "jakob.van.santen@desy.de" },
     { name = "Jakob Nordin" },
