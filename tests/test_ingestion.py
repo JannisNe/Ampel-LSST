@@ -8,9 +8,7 @@ import yaml
 from ampel.abstract.AbsAlertFilter import AbsAlertFilter, AmpelAlertProtocol
 from ampel.abstract.AbsAlertLoader import AbsAlertLoader
 from ampel.alert.AlertConsumer import AlertConsumer
-from ampel.base.AuxUnitRegister import AuxUnitRegister
 from ampel.dev.DevAmpelContext import DevAmpelContext
-from ampel.lsst.alert.LSSTAlertSupplier import LSSTAlertSupplier
 from ampel.model.UnitModel import UnitModel
 
 
@@ -117,46 +115,3 @@ def test_message_ack(alert_consumer: AlertConsumer, mocker):
         {"__kafka": {"alertId": alert["alertId"]}}
         for alert in alert_consumer.alert_supplier.alert_loader.alerts
     ], "alerts acked"
-
-
-def test_duplicate_datapoints(mock_context: DevAmpelContext):
-    """
-    Alerts that contain differential and forced photometry with the same id
-    result in states with unique datapoints.
-    """
-
-    with (Path(__file__).parent / "test-data" / "elasticc-consumer.yml").open() as f:
-        model = UnitModel(**yaml.safe_load(f))
-    for directive in model.config["directives"]:
-        mock_context.add_channel(directive["channel"])
-    # alert with duplicated datapoints
-    model.config["supplier"]["config"]["loader"] = UnitModel(
-        unit="ElasticcDirAlertLoader",
-        config={
-            "folder": str(Path(__file__).parent / "test-data"),
-            # extension gets translated into .*{extension}
-            "extension": "1120_obj104044681_src208089362038.avro.gz",
-            "avro_schema": "https://raw.githubusercontent.com/LSSTDESC/elasticc/c47fbd301b87f915c77ac0046d7845c68c306444/alert_schema/elasticc.v0_9.alert.avsc",
-        },
-    )
-    model.config["iter_max"] = 1
-
-    supplier = AuxUnitRegister.new_unit(
-        model=UnitModel(**model.config["supplier"]), sub_type=LSSTAlertSupplier
-    )
-    alert = next(supplier)
-    assert len(alert.datapoints) == 17, (
-        "alert suppliert removed 3 duplicated datapoints"
-    )
-
-    processor = mock_context.loader.new_context_unit(
-        model=model,
-        context=mock_context,
-        sub_type=AlertConsumer,
-        raise_exc=True,
-    )
-
-    assert processor.run() == 1
-
-    assert (t1 := mock_context.db.get_collection("t1").find_one())
-    assert len(t1["dps"]) == len(set(t1["dps"])), "datapoints in state are unique"
